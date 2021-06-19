@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from evaluation import *
 from network import U_Net,R2U_Net,AttU_Net,R2AttU_Net
 import csv
+import medpy.io.save as save
 
 
 class Solver(object):
@@ -55,13 +56,13 @@ class Solver(object):
 	def build_model(self):
 		"""Build generator and discriminator."""
 		if self.model_type =='U_Net':
-			self.unet = U_Net(img_ch=3,output_ch=1)
+			self.unet = U_Net(img_ch=1,output_ch=1)
 		elif self.model_type =='R2U_Net':
-			self.unet = R2U_Net(img_ch=3,output_ch=1,t=self.t)
+			self.unet = R2U_Net(img_ch=1,output_ch=1,t=self.t)
 		elif self.model_type =='AttU_Net':
-			self.unet = AttU_Net(img_ch=3,output_ch=1)
+			self.unet = AttU_Net(img_ch=1,output_ch=1)
 		elif self.model_type == 'R2AttU_Net':
-			self.unet = R2AttU_Net(img_ch=3,output_ch=1,t=self.t)
+			self.unet = R2AttU_Net(img_ch=1,output_ch=1,t=self.t)
 			
 
 		self.optimizer = optim.Adam(list(self.unet.parameters()),
@@ -145,8 +146,8 @@ class Solver(object):
 
 					# SR : Segmentation Result
 					SR = self.unet(images)
-					SR_probs = F.sigmoid(SR)
-					SR_flat = SR_probs.view(SR_probs.size(0),-1)
+					SR = F.sigmoid(SR)
+					SR_flat = SR.view(SR.size(0),-1)
 
 					GT_flat = GT.view(GT.size(0),-1)
 					loss = self.criterion(SR_flat,GT_flat)
@@ -225,20 +226,21 @@ class Solver(object):
 				JS = JS/length
 				DC = DC/length
 				unet_score = JS + DC
+				# unet_score = acc
 
 				print('[Validation] Acc: %.4f, SE: %.4f, SP: %.4f, PC: %.4f, F1: %.4f, JS: %.4f, DC: %.4f'%(acc,SE,SP,PC,F1,JS,DC))
 				
-				'''
-				torchvision.utils.save_image(images.data.cpu(),
-											os.path.join(self.result_path,
-														'%s_valid_%d_image.png'%(self.model_type,epoch+1)))
-				torchvision.utils.save_image(SR.data.cpu(),
-											os.path.join(self.result_path,
-														'%s_valid_%d_SR.png'%(self.model_type,epoch+1)))
-				torchvision.utils.save_image(GT.data.cpu(),
-											os.path.join(self.result_path,
-														'%s_valid_%d_GT.png'%(self.model_type,epoch+1)))
-				'''
+
+				# torchvision.utils.save_image(images.data.cpu(),
+				# 							os.path.join(self.result_path,
+				# 										'%s_valid_%d_image.png'%(self.model_type,epoch+1)))
+				# torchvision.utils.save_image(SR.data.cpu(),
+				# 							os.path.join(self.result_path,
+				# 										'%s_valid_%d_SR.png'%(self.model_type,epoch+1)))
+				# torchvision.utils.save_image(GT.data.cpu(),
+				# 							os.path.join(self.result_path,
+				# 										'%s_valid_%d_GT.png'%(self.model_type,epoch+1)))
+
 
 
 				# Save Best U-Net model
@@ -271,8 +273,8 @@ class Solver(object):
 				images = images.to(self.device)
 				GT = GT.to(self.device)
 				SR = F.sigmoid(self.unet(images))
+				SE += get_sensitivity(SR, GT)
 				acc += get_accuracy(SR,GT)
-				SE += get_sensitivity(SR,GT)
 				SP += get_specificity(SR,GT)
 				PC += get_precision(SR,GT)
 				F1 += get_F1(SR,GT)
@@ -280,6 +282,26 @@ class Solver(object):
 				DC += get_DC(SR,GT)
 						
 				length += images.size(0)
+
+				# save
+				SR = torch.add(SR,-0.5)
+				SR = torch.ceil(SR)
+				SR = SR.clone().detach().cpu().squeeze(0).squeeze(0)
+				torchvision.utils.save_image(images.data.cpu(),
+											 os.path.join(self.result_path,
+														  '%s_valid_%d_image %d.png' % (self.model_type, epoch + 1, i)))
+				# torchvision.utils.save_image(SR.data.cpu(),
+				# 							 os.path.join(self.result_path,
+				# 										  '%s_valid_%d_SR.png' % (self.model_type, epoch + 1)))
+
+				unloader = torchvision.transforms.ToPILImage()
+				SR = unloader(SR)
+				SR.save(os.path.join(self.result_path,
+														  '%s_valid_%d_SR %d.png' % (self.model_type, epoch + 1, i)))
+
+				torchvision.utils.save_image(GT.data.cpu(),
+											 os.path.join(self.result_path,
+														  '%s_valid_%d_GT %d.png' % (self.model_type, epoch + 1, i)))
 					
 			acc = acc/length
 			SE = SE/length
@@ -295,6 +317,4 @@ class Solver(object):
 			wr = csv.writer(f)
 			wr.writerow([self.model_type,acc,SE,SP,PC,F1,JS,DC,self.lr,best_epoch,self.num_epochs,self.num_epochs_decay,self.augmentation_prob])
 			f.close()
-			
 
-			

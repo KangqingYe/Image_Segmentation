@@ -14,7 +14,7 @@ class ImageFolder(data.Dataset):
 		self.root = root
 		
 		# GT : Ground Truth
-		self.GT_paths = root[:-1]+'_GT/'
+		# self.GT_paths = './dataset/train_label/'
 		self.image_paths = list(map(lambda x: os.path.join(root, x), os.listdir(root)))
 		self.image_size = image_size
 		self.mode = mode
@@ -25,8 +25,8 @@ class ImageFolder(data.Dataset):
 	def __getitem__(self, index):
 		"""Reads an image from a file and preprocesses it and returns."""
 		image_path = self.image_paths[index]
-		filename = image_path.split('_')[-1][:-len(".jpg")]
-		GT_path = self.GT_paths + 'ISIC_' + filename + '_segmentation.png'
+		filename = image_path.split('/')[-1][:-len(".png")]
+		GT_path = image_path.split('_')[0] + '_label/' + filename + '.png'
 
 		image = Image.open(image_path)
 		GT = Image.open(GT_path)
@@ -78,14 +78,14 @@ class ImageFolder(data.Dataset):
 			Transform =[]
 
 
-		Transform.append(T.Resize((int(256*aspect_ratio)-int(256*aspect_ratio)%16,256)))
+		Transform.append(T.Resize((int(512*aspect_ratio)-int(512*aspect_ratio)%16,512)))
 		Transform.append(T.ToTensor())
 		Transform = T.Compose(Transform)
 		
 		image = Transform(image)
 		GT = Transform(GT)
 
-		Norm_ = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+		Norm_ = T.Normalize(0.5, 0.5)
 		image = Norm_(image)
 
 		return image, GT
