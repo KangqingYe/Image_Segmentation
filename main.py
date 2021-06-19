@@ -4,6 +4,14 @@ from solver import Solver
 from data_loader import get_loader
 from torch.backends import cudnn
 import random
+import numpy as np
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
+memory_gpu = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
+print('Using GPU:' + str(np.argmax(memory_gpu)))
+os.environ["CUDA_VISIBLE_DEVICES"] = str(np.argmax(memory_gpu))
+os.system('rm tmp')
 
 def main(config):
     cudnn.benchmark = True
@@ -25,7 +33,7 @@ def main(config):
     lr = 0.0002
     augmentation_prob= random.random()*0.7
     # epoch = random.choice([100,150,200,250])
-    epoch = 1
+    epoch = 1000
     decay_ratio = random.random()*0.8
     decay_epoch = int(epoch*decay_ratio)
 

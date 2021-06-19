@@ -297,7 +297,7 @@ class Solver(object):
 				unloader = torchvision.transforms.ToPILImage()
 				SR = unloader(SR)
 				SR.save(os.path.join(self.result_path,
-														  '%s_valid_%d_SR %d.png' % (self.model_type, epoch + 1, i)))
+														  '%s_test_%d_SR %d.png' % (self.model_type, epoch + 1, i)))
 
 				#torchvision.utils.save_image(GT.data.cpu(),
 				#							 os.path.join(self.result_path,
