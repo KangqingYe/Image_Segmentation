@@ -225,8 +225,8 @@ class Solver(object):
 				F1 = F1/length
 				JS = JS/length
 				DC = DC/length
-				unet_score = JS + DC
-				# unet_score = acc
+				#unet_score = JS + DC
+				unet_score = acc
 
 				print('[Validation] Acc: %.4f, SE: %.4f, SP: %.4f, PC: %.4f, F1: %.4f, JS: %.4f, DC: %.4f'%(acc,SE,SP,PC,F1,JS,DC))
 				
@@ -268,7 +268,7 @@ class Solver(object):
 			JS = 0.		# Jaccard Similarity
 			DC = 0.		# Dice Coefficient
 			length=0
-			for i, (images, GT) in enumerate(self.valid_loader):
+			for i, (images, GT) in enumerate(self.test_loader):
 
 				images = images.to(self.device)
 				GT = GT.to(self.device)
@@ -287,9 +287,9 @@ class Solver(object):
 				SR = torch.add(SR,-0.5)
 				SR = torch.ceil(SR)
 				SR = SR.clone().detach().cpu().squeeze(0).squeeze(0)
-				torchvision.utils.save_image(images.data.cpu(),
-											 os.path.join(self.result_path,
-														  '%s_valid_%d_image %d.png' % (self.model_type, epoch + 1, i)))
+				#torchvision.utils.save_image(images.data.cpu(),
+				#							 os.path.join(self.result_path,
+					#									  '%s_valid_%d_image %d.png' % (self.model_type, epoch + 1, i)))
 				# torchvision.utils.save_image(SR.data.cpu(),
 				# 							 os.path.join(self.result_path,
 				# 										  '%s_valid_%d_SR.png' % (self.model_type, epoch + 1)))
@@ -299,9 +299,9 @@ class Solver(object):
 				SR.save(os.path.join(self.result_path,
 														  '%s_valid_%d_SR %d.png' % (self.model_type, epoch + 1, i)))
 
-				torchvision.utils.save_image(GT.data.cpu(),
-											 os.path.join(self.result_path,
-														  '%s_valid_%d_GT %d.png' % (self.model_type, epoch + 1, i)))
+				#torchvision.utils.save_image(GT.data.cpu(),
+				#							 os.path.join(self.result_path,
+					#									  '%s_valid_%d_GT %d.png' % (self.model_type, epoch + 1, i)))
 					
 			acc = acc/length
 			SE = SE/length
@@ -312,9 +312,8 @@ class Solver(object):
 			DC = DC/length
 			unet_score = JS + DC
 
-
 			f = open(os.path.join(self.result_path,'result.csv'), 'a', encoding='utf-8', newline='')
 			wr = csv.writer(f)
-			wr.writerow([self.model_type,acc,SE,SP,PC,F1,JS,DC,self.lr,best_epoch,self.num_epochs,self.num_epochs_decay,self.augmentation_prob])
+			wr.writerow([self.model_type,acc,SE,SP,PC,F1,JS,DC,self.lr,best_epoch,self.num_epochs,self.num_epochs_decay,self.augmentation_prob,self.batch_size])
 			f.close()
 

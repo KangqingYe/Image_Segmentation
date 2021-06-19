@@ -21,7 +21,8 @@ def main(config):
     if not os.path.exists(config.result_path):
         os.makedirs(config.result_path)
     
-    lr = random.random()*0.0005 + 0.0000005
+    # lr = random.random()*0.0005 + 0.0000005
+    lr = 0.0002
     augmentation_prob= random.random()*0.7
     # epoch = random.choice([100,150,200,250])
     epoch = 1
